@@ -1,6 +1,8 @@
 #ifndef IFdmUnits_HH
 #define IFdmUnits_HH
 
+#include <cmath>
+
 static const double m  = 1.;
 static const double m2 = m * m;
 static const double m3 = m * m * m;
@@ -20,5 +22,6 @@ static const double sec  = 1.;
 static const double msec = 0.001*sec;
 
 static const double Ohm = 1.;
+static const double mu0 = 4 * M_PI * 1.0e-7;
 
 #endif
