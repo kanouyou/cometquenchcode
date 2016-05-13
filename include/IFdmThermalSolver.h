@@ -47,9 +47,11 @@ class FDM::IFdmThermalSolver
 
     double GetResistance();
 
-    void Upgrade(double I, double B);
+    void Upgrade(double I);
 
     double Solve(double dt);
+
+    int* GetMesh() { return fMesh; }
 
   private:
     static std::vector<IElectricContainer*> fHC;

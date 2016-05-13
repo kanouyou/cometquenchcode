@@ -1,7 +1,9 @@
 #ifndef IThermalContainer_HH
 #define IThermalContainer_HH
 
-class IThermalContainer
+#include <TObject.h>
+
+class IThermalContainer : public TObject
 {
   public:
     IThermalContainer();
@@ -81,6 +83,8 @@ class IElectricContainer : public IThermalContainer
     double GetVoltage() { return fVoltage; }
 
     double GetQuench() { return fQchON; }
+
+    ClassDef(IElectricContainer, 1);
 
   private:
     double fCurrent;

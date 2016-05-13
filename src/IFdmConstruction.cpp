@@ -1,10 +1,11 @@
 #include <iostream>
+#include "IFdmFieldHandle.h"
 #include "IFdmConstruction.h"
 
 FDM::IFdmConstruction::IFdmConstruction()
     : fTime(NULL), fDump(0.128),
       fIndct(12.69),fCurrent(2700.),
-      fThV(0.01),
+      fThV(0.01), fVd(0.7),
       fCS0(NULL), fCS1(NULL)
 {}
 
@@ -54,23 +55,80 @@ void FDM::IFdmConstruction::Construct()
   fCS1->GetContainer(45,1,2)->SetQuench(true);
 }
 
+/*! construct magnetic field for each magnet */
+void FDM::IFdmConstruction::ConstructField(const std::string& name, FDM::IFdmThermalSolver* mag)
+{
+  FDM::IFdmFieldHandle* hand = new FDM::IFdmFieldHandle();
+  hand->SetCurrent(fCurrent);
+  // CS0
+  hand->ConstructSolenoid("CS0", 672.*mm, 823.65*mm,  857.88*mm, 1038.12*mm);
+  hand->SetMesh("CS0", 9, 35);
+  // CS1
+  hand->ConstructSolenoid("CS1", 672.*mm, 823.65*mm, -595.25*mm,  795.25*mm);
+  hand->SetMesh("CS1", 9, 270);
+
+  hand->EvalField(name);
+
+  for (int i=1; i<mag->GetMesh()[0]+1; i++) {
+    for (int j=1; j<mag->GetMesh()[1]+1; j++) {
+      for (int k=1; k<mag->GetMesh()[2]+1; k++) {
+        mag->GetContainer(i,j,k)->SetField( hand->GetContainer(name, k-1, i-1)->GetField()[2] );
+//        std::cout << k << " " << hand->GetContainer(name, k-1, i-1)->GetId()[0] << " "
+//                  << i << " " << hand->GetContainer(name, k-1, i-1)->GetId()[1] << std::endl;
+      }
+    }
+  }
+
+}
+
+double FDM::IFdmConstruction::CurrentDecay(double R, double t)
+{
+  double Rtot = fDump + R;
+  double tau  = fIndct / Rtot;
+  double I    = (fCurrent + fVd/Rtot) * exp(-t / tau) - fVd/Rtot;
+
+  return I;
+}
+
+void FDM::IFdmConstruction::FieldDecay(FDM::IFdmThermalSolver* mag, double factor)
+{
+  double B;
+
+  for (int i=1; i<mag->GetMesh()[0]+1; i++) {
+    for (int j=1; j<mag->GetMesh()[1]+1; j++) {
+      for (int k=1; k<mag->GetMesh()[2]+1; k++) {
+        B = mag->GetContainer(i,j,k)->GetField() - mag->GetContainer(i,j,k)->GetField() * factor;
+        mag->GetContainer(i,j,k)->SetField( B );
+      }
+    }
+  }
+
+} 
+
 void FDM::IFdmConstruction::TimeLoop()
 {
   double dt   = fTime[2];
   double time = fTime[0];
   int    cnt  = 0;
-  const double Vd = 0.7;
 
-  double magres;
+  double magres  = 0.;
   double qchtime = 0.;
   double I  = fCurrent;
-  double B0 = fCS0->GetContainer(45,2,2)->GetField();
-  double B1 = fCS1->GetContainer(1,1,1)->GetField();
-  double Bb[2] = {B0, B1};
-  double B [2] = {B0, B1};
+  double dcyfactor = 1.;
+  double dI;
+
+  std::cout << "Constructing magnet..." << std::endl;
+
+  // initialized CS0 field
+  ConstructField("CS0", fCS0);
+
+  // initialized CS1 field
+  ConstructField("CS1", fCS1);
+
+  std::cout << "Start Time loop..." << std::endl;
 
   // time loop
-  while (time < fTime[1]) {
+  while (time < fTime[1] || I <= 0.) {
 
     time += dt;
 
@@ -81,20 +139,24 @@ void FDM::IFdmConstruction::TimeLoop()
 
     // calculate current and field decay
     if (magres*I >= fThV) {
+      // calculate time local after magnet quenched
       qchtime += dt;
-      I = ( fCurrent + Vd / (magres + fDump) ) * exp (-(magres + fDump) * qchtime / fIndct )
-          - Vd / (magres + fDump);
-      for (int i=0; i<sizeof(B)/sizeof(B[0]); i++) 
-        B[i] = Bb[i] * exp(-(magres + fDump) * qchtime / fIndct );
+      // calculate current decay
+      dI = I - CurrentDecay(magres, qchtime);
+      I  = CurrentDecay(magres, qchtime);
+      dcyfactor = dI / fCurrent;
+      // calculate field decay
+      FieldDecay(fCS0, dcyfactor);
+      FieldDecay(fCS1, dcyfactor);
     }
 
     // upgrade property
-    fCS0->Upgrade(I, B[0]);
-    fCS1->Upgrade(I, B[1]);
+    fCS0->Upgrade(I);
+    fCS1->Upgrade(I);
 
     // solve thermal conduct equation
     fCS0->Solve(dt);
-    dt = fCS1->Solve(dt) / 2.;
+    dt = fCS1->Solve(dt);
 
     // connect magnets
     fCS0->GetContainer(0,1,9)->SetTemp( fCS1->GetContainer(270,1,9)->GetTemp() );
@@ -115,7 +177,7 @@ void FDM::IFdmConstruction::TimeLoop()
               << std::setw(9) << fCS1->GetContainer(45,2,2)->GetSource()
               << std::setw(9) << std::fixed << fCS1->GetContainer(45,2,2)->GetTemp()
               << std::setw(9) << fCS0->GetContainer(1,1,9)->GetTemp()
-              << std::setw(7) << fCS1->GetContainer(45,2,2)->GetField() << std::endl;
+              << std::setw(7) << fCS1->GetContainer(135,1,1)->GetField() << std::endl;
 
     cnt ++;
   }

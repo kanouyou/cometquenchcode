@@ -1,5 +1,4 @@
 #include <iostream>
-#include <cmath>
 #include <TCanvas.h>
 #include <TStyle.h>
 #include <TH2F.h>
@@ -72,6 +71,11 @@ void FDM::IFdmField::EvalField()
       //std::cout << R << "    " << Z << "    " << Br << "    " << Bz << "     " << B << std::endl;
     }
   }
+}
+
+Field::IFieldContainer* FDM::IFdmField::GetContainer(const int i, const int j)
+{
+  return fHC[i*fMapMesh[1] + j];
 }
 
 double FDM::IFdmField::GetSelfInductance()

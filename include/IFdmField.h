@@ -2,6 +2,7 @@
 #define IFdmField_HH
 
 #include <vector>
+#include <cmath>
 #include "IFdmBiotSavart.h"
 
 /* ********************************************* */
@@ -31,9 +32,10 @@ class Field::IFieldContainer
     }
 
     void SetField(double Br, double Bz) {
-      if (!fField)  fField = new double[2];
+      if (!fField)  fField = new double[3];
       fField[0] = Br;
       fField[1] = Bz;
+      fField[2] = sqrt(pow(Br,2) + pow(Bz,2));
     }
 
     void SetPotential(double A) { fA = A; }
@@ -78,6 +80,12 @@ class FDM::IFdmField : public FDM::IFdmBiotSavart
 
     /*! calculate solenoid self inductance */
     double GetSelfInductance();
+
+    /*! return the field container at this point (i, j) */
+    Field::IFieldContainer* GetContainer(const int i, const int j);
+
+    /*! return the whole container vector */
+    std::vector<Field::IFieldContainer*> GetCollection() { return fHC; }
 
     /*! plot field map */
     void Plot();

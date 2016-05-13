@@ -49,14 +49,18 @@ double FDM::IFdmBiotSavart::EvalPotential(double pr, double pz)
   double R, Z, PHI, A;
 
   for (int i=0; i<fSolMesh[0]; i++) {  // R
+    // calculate current point at solenoid
+    R = fSolenoid[0] + i * dr + dr/2;
     for (int j=0; j<fSolMesh[1]; j++) {  // PHI
+      // calculate current point at solenoid
+      PHI = 0. + j * dp + dp/2;
       for (int k=0; k<fSolMesh[2]; k++) {  // Z
         // calculate current point at solenoid
-        R   = fSolenoid[0] + i * dr + dr/2;
-        PHI = 0.           + j * dp + dp/2;
-        Z   = fSolenoid[2] + k * dz + dz/2;
+        Z = fSolenoid[2] + k * dz + dz/2;
+
         // calculate rPQ
         rPQ = sqrt( pow(Z-pz,2) + pow(R,2) + pow(pr,2) - 2*pr*R*cos(PHI) );
+
         // integration
         if (rPQ==0.)
           Aphi += 0.;
@@ -64,6 +68,7 @@ double FDM::IFdmBiotSavart::EvalPotential(double pr, double pz)
           A = (mu0 * fCurrent / 4 / M_PI) * (R * cos(PHI) * dr * dz * dp / rPQ);
           Aphi += A;
         }
+
       }
     }
   }

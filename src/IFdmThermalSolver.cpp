@@ -161,7 +161,7 @@ double FDM::IFdmThermalSolver::GetResistance()
   return R;
 }
 
-void FDM::IFdmThermalSolver::Upgrade(double I, double B)
+void FDM::IFdmThermalSolver::Upgrade(double I)
 {
   double dlPhi  = LPHI / fMesh[1];
   double NumCdt = fTurn / fMesh[0];
@@ -171,13 +171,14 @@ void FDM::IFdmThermalSolver::Upgrade(double I, double B)
   double CAl, CCu, CSC, CAvg;
   double RAl, RCu, RAvg;
   double Temp, RRR, Tcs, Tc, Rcs;
-  double vol;
+  double vol, B;
 
   for (int i=0; i<fMesh[0]+2; i++) {
     for (int j=0; j<fMesh[1]+2; j++) {
       for (int k=0; k<fMesh[2]+2; k++) {
         Temp = GetContainer(i,j,k)->GetTemp();
         RRR  = GetContainer(i,j,k)->GetRRR();
+        B    = GetContainer(i,j,k)->GetField();
         Tcs  = fSC->GetCSTemp(Temp, B, I);
         Tc   = fSC->GetCriticalTemp(B);
 

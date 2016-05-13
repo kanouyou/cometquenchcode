@@ -1,6 +1,8 @@
 #include <iostream>
 #include "IThermalContainer.h"
 
+ClassImp(IElectricContainer);
+
 IThermalContainer::IThermalContainer()
     : fId(NULL), fDensity(0.), fCapacity(0.),
       fRRR(0.), fField(0.),
