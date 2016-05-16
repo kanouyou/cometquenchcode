@@ -1,5 +1,5 @@
 /*!
-   @file
+   @file   main.cpp
    @brief  Quench simulation code for COMET capture solenoid
    @author Y.YANG
    @date   07-05-2016
@@ -7,19 +7,48 @@
 
 #include <iostream>
 #include <iomanip>
+#include <string>
 #include <TApplication.h>
 #include "IFdmFieldHandle.h"
 #include "IFdmParameters.h"
 #include "IFdmConstruction.h"
 #include "IFdmException.h"
+#include "IMyPostprocess.h"
 
 using namespace std;
 
-int main(int argc, char** argv)
+/*! usage */
+void Usage()
+{
+  std::cout << " Quench Simulation of Capture Superconducting Solenoid for COMET Experiment\n" << std::endl;
+  std::cout << " Usage: " << std::endl;
+  std::cout << "         ./SimCOMETCaptureQuench.exe -[option] <string> \n" << std::endl;
+  std::cout << " Option: " << std::endl;
+  std::cout << "         -f or --field <magnet>          Calculate and plot field inside this magnet." << std::endl;
+  std::cout << "         -p or --post  <file>            Make graph from output and save it into file." << std::endl;
+  std::cout << "         -r or --run                     Run the quench simulation." << std::endl;
+  std::cout << "         -t ot --time  <time>            Set simulated quenched time. " << std::endl;
+}
+
+/*! plot the magnetic field inside the magnet */
+void PlotMagnetField(const string& name)
+{
+  FDM::IFdmFieldHandle* hand = new FDM::IFdmFieldHandle();
+  hand->SetCurrent(2700.);
+  hand->ConstructSolenoid("CS1", 672.*mm, 823.65*mm, -79.525*cm, 59.525*cm);
+  hand->ConstructSolenoid("CS0", 672.*mm, 823.65*mm, -103.812*cm, -85.788*cm);
+  hand->SetMesh("CS1", 9, 270);
+  hand->SetMesh("CS0", 9, 35);
+  hand->EvalField(name);
+  hand->Plot(name);
+}
+
+/*! run quench simulation */
+void Run()
 {
   // set time step
   double t0 = 0.*sec;
-  double tf = 200*sec;
+  double tf = 100.*sec;
   double dt = 0.01*msec;
 
   try {
@@ -34,6 +63,23 @@ int main(int argc, char** argv)
               << " Class: " << ex.GetFileName() << "\n"
               << " Function: " << ex.GetFunction() << std::endl;
   }
+}
+
+/*! postprocess */
+void Post()
+{
+  IMyPostprocess* post = new IMyPostprocess();
+  post->SetDirectory("CS0");
+  post->SetFile("plot.root");
+  post->PlotTimeTemp();
+}
+
+/*! main program */
+int main(int argc, char** argv)
+{
+  Run();
+  //Post();
+
   //TApplication* app = new TApplication("app", &argc, argv);
 /*
   FDM::IFdmField* fld = new FDM::IFdmField();
@@ -48,15 +94,6 @@ int main(int argc, char** argv)
   fld->EvalField();
 */
 /*
-  FDM::IFdmFieldHandle* hand = new FDM::IFdmFieldHandle();
-  hand->SetCurrent(2700.);
-  hand->ConstructSolenoid("CS1", 672.*mm, 823.65*mm, -79.525*cm, 59.525*cm);
-  hand->ConstructSolenoid("CS0", 672.*mm, 823.65*mm, -103.812*cm, -85.788*cm);
-  hand->SetMesh("CS1", 9, 270);
-  hand->SetMesh("CS0", 9, 35);
-  hand->EvalField("CS1");
-  hand->Plot("CS1");
-
   app->Run();
 */
   return 0;

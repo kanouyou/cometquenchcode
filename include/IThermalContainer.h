@@ -1,6 +1,8 @@
 #ifndef IThermalContainer_HH
 #define IThermalContainer_HH
 
+#include <string>
+#include <vector>
 #include <TObject.h>
 
 class IThermalContainer : public TObject
@@ -11,6 +13,8 @@ class IThermalContainer : public TObject
     ~IThermalContainer();
 
     void SetId(int z, int p, int r);
+
+    //virtual void SetMagnetName(std::string name) { fName = name; }
 
     void SetDensity(double rho) { fDensity = rho; }
 
@@ -29,7 +33,9 @@ class IThermalContainer : public TObject
     void SetSource(double Q) { fSource = Q; }
 
     // Get Method
-    int*   GetId() { return fId; }
+    //virtual std::string GetMagnetName() { return fName; }
+
+    std::vector<int> GetId() { return fId; }
 
     double GetDensity() { return fDensity; }
 
@@ -39,7 +45,7 @@ class IThermalContainer : public TObject
 
     double GetField() { return fField; }
 
-    double* GetConductivity() { return fk; }
+    std::vector<double> GetConductivity() { return fk; }
 
     double GetPreTemp() { return fPreT; }
 
@@ -47,16 +53,19 @@ class IThermalContainer : public TObject
 
     double GetSource() { return fSource; }
 
+    ClassDef(IThermalContainer, 1);
+
   protected:
-    int*    fId;
+    std::vector<int> fId;
     double  fDensity;
     double  fCapacity;
     double  fRRR;
     double  fField;
-    double* fk;
+    std::vector<double> fk;
     double  fPreT;
     double  fTemp;
     double  fSource;
+    //std::string fName;
 };
 
 

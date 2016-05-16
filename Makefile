@@ -13,14 +13,20 @@ LIBSRC  = IFdmException.cpp \
           IFdmKapton.cpp \
           IThermalContainer.cpp \
           IFdmThermalSolver.cpp \
-          IFdmConstruction.cpp
+          IFdmConstruction.cpp \
+          IFdmBiotSavart.cpp \
+          IFdmField.cpp \
+          IFdmFieldHandle.cpp \
+          IFdmDataflow.cpp \
+          IFdmPostprocess.cpp \
+          IMyPostprocess.cpp
 
 # ----- cint -----
-#CINT      = rootcint
-#CINTARGET = IFdmHeatContainerDict.cpp
-#CINTSRC   = IFdmHeatContainer.h IFdmHeatContainer_LinkDef.h  
+CINT      = rootcint
+CINTARGET = IThermalContainerDict.cpp
+CINTSRC   = include/IThermalContainer.h include/IThermalContainer_LinkDef.h  
 
-SRC     = $(MAINSRC) $(LIBSRC) #$(CINTARGET)
+SRC     = $(MAINSRC) $(LIBSRC) $(CINTARGET)
 OBJS    = $(SRC:.cpp=.o)
 
 CXXLIBS   =
@@ -40,12 +46,12 @@ $(TARGET): $(OBJS)
 .o:.cpp
 	$(CXX) $(CXXFLAGS) -c $<
 
-#$(CINTARGET): $(CINTSRC)
-#	$(CINT) -f $@ -c $^
+$(CINTARGET): $(CINTSRC)
+	$(CINT) -f $@ -c $^
 
 .PHONY: clean
 clean:
-	$(RM) $(TARGET) $(OBJS)
+	$(RM) $(TARGET) $(OBJS) $(CINTARGET) IThermalContainerDict*
 
 .PHONY: install
 install:

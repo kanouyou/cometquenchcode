@@ -2,31 +2,57 @@
 #include "IFdmDataflow.h"
 
 FDM::IFdmDataflow::IFdmDataflow()
-    : fCollect(NULL), fMesh(NULL)
+    : fFile(NULL)
 {}
 
-FDM::IFdmDataflow::IFdmDataflow(IThermalContainer* con)
-    : fCollect(con), fMesh(NULL)
-{}
+FDM::IFdmDataflow::IFdmDataflow(const std::string& filename)
+    : fFile(NULL)
+{
+  fFile = new TFile(filename.c_str(), "RECREATE");
+}
 
 FDM::IFdmDataflow::~IFdmDataflow()
 {
-  if (fCollect)  delete fCollect;
-  if (fMesh)     delete fMesh;
+  fFile->Close();
 }
 
-void FDM::IFdmDataflow::Save(IThermalContainer* con)
+void FDM::IFdmDataflow::SetFile(const std::string& name)
 {
-  fCollect = con;
+  if (!fFile)  fFile = new TFile(name.c_str(), "RECREATE");
 }
 
-void FDM::IFdmDataflow::SetMesh(const int z, const int p, const int r)
+void FDM::IFdmDataflow::SetSubFolder(const std::string& foldername)
 {
-  if (!fMesh) fMesh = new int[3];
-
-  fMesh[0] = z;
-  fMesh[1] = p;
-  fMesh[2] = r;
+  TDirectory* dir = fFile->mkdir(foldername.c_str());
+  fDir.insert( std::map<std::string, TDirectory*>::value_type(foldername, dir) );
 }
 
+void FDM::IFdmDataflow::Fill(const std::string& sol, const std::string& name, FDM::IFdmThermalSolver* mag)
+{
+  fDir[sol]->cd();
 
+  TTree* tree = new TTree(name.c_str(), Form("Quench time: %s", name.c_str()));
+  
+  int    id  [3];
+  IElectricContainer* evt = NULL;
+
+  tree->Branch(  "id",   id,   "id[3]/I");
+  tree->Branch("data", "IElectricContainer", &evt, 128000, 0);
+
+  for (int i=0; i<mag->GetMesh()[0]+2; i++) {
+    for (int j=0; j<mag->GetMesh()[1]+2; j++) {
+      for (int k=0; k<mag->GetMesh()[2]+2; k++) {
+        id[0] = i;
+        id[1] = j;
+        id[2] = k;
+        evt = mag->GetContainer(i,j,k);
+        tree->Fill();
+      }
+    }
+  }
+}
+
+void FDM::IFdmDataflow::Close()
+{
+  fFile->Write();
+}

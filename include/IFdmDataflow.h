@@ -1,7 +1,12 @@
 #ifndef IFdmDataflow_HH
 #define IFdmDataflow_HH
 
-#include "IThermalContainer.h"
+#include <string>
+#include <map>
+#include <TFile.h>
+#include <TTree.h>
+#include <TDirectory.h>
+#include "IFdmThermalSolver.h"
 
 namespace FDM
 { class IFdmDataflow; }
@@ -9,19 +14,41 @@ namespace FDM
 class FDM::IFdmDataflow
 {
   public:
+    /*! constructor */
     IFdmDataflow();
 
-    IFdmDataflow(IThermalContainer* con);
+    /*!
+       @brief constructor
+       @param (filename) root file name
+     */
+    IFdmDataflow(const std::string& filename);
 
     ~IFdmDataflow();
 
-    void Save(IThermalContainer* con); 
+    /*! set root file name */
+    void SetFile(const std::string& name);
 
-    void SetMesh(const int z, const int p, const int r);
+    /*! 
+       @brief set subfolder's name
+       @param (foldername) subdirectory name
+     */
+    void SetSubFolder(const std::string& foldername);
+
+    /*!
+        @brief fill class data into tree
+        @param (sol)  solenoid name
+        @param (name) tree's name
+        @param (mag)  solenoid data container
+     */
+    void Fill(const std::string& sol, const std::string& name, FDM::IFdmThermalSolver* mag);
+
+    /*! close file */
+    void Close();
 
   private:
-    IThermalContainer* fCollect;
-    int* fMesh;
+    TFile* fFile;
+    std::map<std::string, TTree*> fTree;
+    std::map<std::string, TDirectory*> fDir;
 };
 
 #endif

@@ -16,6 +16,8 @@ class FDM::IFdmException : public std::exception
 
     virtual ~IFdmException() throw();
 
+    virtual void SetMessage(const std::string& message) { fMessage = message; }
+
     const char* GetFileName() const;
 
     const char* GetFunction() const;

@@ -1,6 +1,7 @@
 #include <iostream>
 #include "IFdmFieldHandle.h"
 #include "IFdmConstruction.h"
+#include "IFdmDataflow.h"
 
 FDM::IFdmConstruction::IFdmConstruction()
     : fTime(NULL), fDump(0.128),
@@ -29,7 +30,7 @@ void FDM::IFdmConstruction::Construct()
   // CS0
   // ************************** //
   if (!fCS0)
-    fCS0 = new IFdmThermalSolver(35,4,9);
+    fCS0 = new IFdmThermalSolver(35,1,9);
 
   fCS0->SetLayer(9);
   fCS0->SetTurn(35);
@@ -42,7 +43,7 @@ void FDM::IFdmConstruction::Construct()
   // CS1
   // ************************** //
   if (!fCS1)
-    fCS1 = new IFdmThermalSolver(270, 4, 9);
+    fCS1 = new IFdmThermalSolver(270, 1, 9);
 
   fCS1->SetLayer(9);
   fCS1->SetTurn(270);
@@ -125,6 +126,12 @@ void FDM::IFdmConstruction::TimeLoop()
   // initialized CS1 field
   ConstructField("CS1", fCS1);
 
+  // set data file
+  std::string name;
+  FDM::IFdmDataflow* data = new FDM::IFdmDataflow("capturequench.root");
+  data->SetSubFolder("CS0");
+  data->SetSubFolder("CS1");
+
   std::cout << "Start Time loop..." << std::endl;
 
   // time loop
@@ -174,13 +181,20 @@ void FDM::IFdmConstruction::TimeLoop()
               << std::setw(7) << dt / msec
               << std::setw(9) << I
               << std::setw(9) << std::scientific << magres * I
-              << std::setw(9) << fCS1->GetContainer(45,2,2)->GetSource()
-              << std::setw(9) << std::fixed << fCS1->GetContainer(45,2,2)->GetTemp()
+              << std::setw(9) << fCS1->GetContainer(45,1,2)->GetSource()
+              << std::setw(9) << std::fixed << fCS1->GetContainer(45,1,2)->GetTemp()
               << std::setw(9) << fCS0->GetContainer(1,1,9)->GetTemp()
               << std::setw(7) << fCS1->GetContainer(135,1,1)->GetField() << std::endl;
+
+    if (cnt%5==0) {
+      name = std::string(Form("%.2f sec", time));
+
+      data->Fill("CS0", name, fCS0);
+      data->Fill("CS1", name, fCS1);
+    }
 
     cnt ++;
   }
 
-  
+  data->Close();
 }
