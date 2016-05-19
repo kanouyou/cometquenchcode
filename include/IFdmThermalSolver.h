@@ -54,7 +54,7 @@ class FDM::IFdmThermalSolver
     int* GetMesh() { return fMesh; }
 
   private:
-    static std::vector<IElectricContainer*> fHC;
+    std::vector<IElectricContainer*> fHC;
 
   private:
     int* fMesh;

@@ -5,7 +5,7 @@
 using std::vector;
 
 /*! data container for thermal calculation. */
-vector<IElectricContainer*> FDM::IFdmThermalSolver::fHC;
+//vector<IElectricContainer*> FDM::IFdmThermalSolver::fHC;
 
 FDM::IFdmThermalSolver::IFdmThermalSolver()
     : fMesh(NULL), fLayer(9),
@@ -179,6 +179,7 @@ void FDM::IFdmThermalSolver::Upgrade(double I)
         Temp = GetContainer(i,j,k)->GetTemp();
         RRR  = GetContainer(i,j,k)->GetRRR();
         B    = GetContainer(i,j,k)->GetField();
+        if (B<=0.) B = 0.;
         Tcs  = fSC->GetCSTemp(Temp, B, I);
         Tc   = fSC->GetCriticalTemp(B);
 
@@ -284,9 +285,8 @@ double FDM::IFdmThermalSolver::Solve(double dt)
         GetContainer(i,j,k)->SetTemp(T);
 
         // set quench spot
-        if (GetContainer(i,j,k)->GetQuench()==true && T<9.4)
+        if (GetContainer(i,j,k)->GetQuench()==true && T<9.4) 
           GetContainer(i,j,k)->SetTemp(9.4);
-
       }
     }
   }
@@ -301,12 +301,26 @@ double FDM::IFdmThermalSolver::Solve(double dt)
       GetContainer(fMesh[0]+1,j,k)->SetTemp( GetContainer(fMesh[0],j,k)->GetTemp() );
     }
   }
-
+/*
   // phi direction
   for (int i=0; i<fMesh[0]+2; i++) {
     for (int k=0; k<fMesh[2]+2; k++) {
       GetContainer(i,0,k)->SetTemp( GetContainer(i,fMesh[1],k)->GetTemp() );
       GetContainer(i,fMesh[1]+1,k)->SetTemp( GetContainer(i,1,k)->GetTemp() );
+    }
+  }
+*/
+
+  // conductor axis
+  for (int i=0; i<fMesh[0]+2; i++) {
+    for (int k=0; k<fMesh[2]+2; k++) {
+      GetContainer(i,0,k)->SetTemp( GetContainer(i,fMesh[1],k)->GetTemp() );
+      GetContainer(i,fMesh[1]+1,k)->SetTemp( GetContainer(i,1,k)->GetTemp() );
+      // connect this turn conductor to the next turn conductor
+      if (i>1 && i<fMesh[0]) {
+        GetContainer(i,0,k)->SetTemp( GetContainer(i-1,fMesh[1],k)->GetTemp() );
+        GetContainer(i,fMesh[1]+1,k)->SetTemp( GetContainer(i+1,1,k)->GetTemp() );
+      }
     }
   }
 

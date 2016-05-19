@@ -1,6 +1,8 @@
 #ifndef IFdmBiotSavart_HH
 #define IFdmBiotSavart_HH
 
+#include <map>
+
 namespace FDM
 { class IFdmBiotSavart; }
 
@@ -31,6 +33,9 @@ class FDM::IFdmBiotSavart
     /*! Calculate magnetic potential at (r,z) */
     double EvalPotential(double pr, double pz);
 
+    /*! Calculate magnetic potential at (r,z) by gaussian integration */
+    double EvalPotential2(double pr, double pz);
+
     /*! return the current density */
     double GetCurrentDensity() { return fCurrent; }
 
@@ -48,6 +53,7 @@ class FDM::IFdmBiotSavart
     int*    fSolMesh;
     double  fCurrent;
     double  fACdt;
+    std::map<double, double> fGaus;    
 };
 
 #endif

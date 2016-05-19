@@ -47,8 +47,8 @@ void FDM::IFdmField::EvalField()
 
   for (int i=0; i<fMapMesh[0]+1; i++) {
     for (int j=0; j<fMapMesh[1]+1; j++) {
-      R = fMap[0] + (i-1) * dr + dr / 2;
-      Z = fMap[2] + (j-1) * dz + dz / 2;
+      R = fMap[0] + i * dr + dr / 2;
+      Z = fMap[2] + j * dz + dz / 2;
       A[i][j] = EvalPotential(R, Z);
 
       if (i>0 && j>0) {
@@ -68,7 +68,7 @@ void FDM::IFdmField::EvalField()
         B  = sqrt(pow(Bz,2) + pow(Br,2));
       }
 
-      //std::cout << R << "    " << Z << "    " << Br << "    " << Bz << "     " << B << std::endl;
+      //std::cout << R << "    " << Z << "    " << Br << "    " << Bz << "     " << A[i][j] << std::endl;
     }
   }
 }

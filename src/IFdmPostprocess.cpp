@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 #include <TStyle.h>
 #include "IFdmPostprocess.h"
 #include "IFdmException.h"
@@ -29,7 +30,6 @@ void FDM::IFdmPostprocess::SetDirectory(const std::string& name)
     name >> time;
     fTime.push_back(time);
   }
-
 }
 
 std::vector<std::string> FDM::IFdmPostprocess::GetTreeName()
@@ -47,20 +47,21 @@ std::vector<std::string> FDM::IFdmPostprocess::GetTreeName()
 
 int* FDM::IFdmPostprocess::GetMesh()
 {
-  int  id [3];
   int* msh = new int[3];
 
   msh[0] = 0; msh[1] = 0; msh[2] = 0;
 
   std::string name = std::string(fFile->GetDirectory(fDirName.c_str())->GetListOfKeys()->At(0)->GetName());
+  IElectricContainer* collect = new IElectricContainer();
+
   TTree* tree = dynamic_cast<TTree*>(fFile->GetDirectory(fDirName.c_str())->Get(name.c_str()));
-  tree->SetBranchAddress("id", id);
+  tree->SetBranchAddress("data", &collect);
 
   for (int i=0; i<tree->GetEntries(); i++) {
     tree->GetEntry(i);
-    if (id[0] > msh[0])  msh[0] = id[0];
-    if (id[1] > msh[1])  msh[1] = id[1];
-    if (id[2] > msh[2])  msh[2] = id[2];
+    if (collect->GetId()[0] > msh[0])  msh[0] = collect->GetId()[0];
+    if (collect->GetId()[1] > msh[1])  msh[1] = collect->GetId()[1];
+    if (collect->GetId()[2] > msh[2])  msh[2] = collect->GetId()[2];
   }
 
   msh[0] -= 1;
@@ -73,17 +74,14 @@ int* FDM::IFdmPostprocess::GetMesh()
 double FDM::IFdmPostprocess::GetTemperature(const std::string& name, const int z, const int p, const int r)
 {
   double temp = 0.;
-  int id[3];
   IElectricContainer* collect = new IElectricContainer();
 
   TTree* tree = dynamic_cast<TTree*>(fFile->GetDirectory(fDirName.c_str())->Get(name.c_str()));
-  
-  tree->SetBranchAddress("id", id);
   tree->SetBranchAddress("data", &collect);
 
   for (int i=0; i<tree->GetEntries(); i++) {
     tree->GetEntry(i);
-    if (id[0]==z && id[1]==p && id[2]==r) {
+    if (collect->GetId()[0]==z && collect->GetId()[1]==p && collect->GetId()[2]==r) {
       temp = collect->GetTemp();
       break;
     }

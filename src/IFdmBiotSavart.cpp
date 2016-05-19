@@ -1,6 +1,9 @@
 #include <cmath>
+#include <iostream>
 #include "IFdmUnits.h"
 #include "IFdmBiotSavart.h"
+
+using std::map;
 
 FDM::IFdmBiotSavart::IFdmBiotSavart()
     : fSolenoid(NULL), fSolMesh(NULL),
@@ -11,6 +14,31 @@ FDM::IFdmBiotSavart::IFdmBiotSavart()
   fSolMesh[0] = 10;
   fSolMesh[1] = 80;
   fSolMesh[2] = 80;
+
+  int n = 4;
+
+  switch (n) {
+    case 1:
+      fGaus.insert( map<double, double>::value_type(0., 2.) );
+      break;
+    case 2:
+      fGaus.insert( map<double, double>::value_type(-1./sqrt(3.), 1.) );
+      fGaus.insert( map<double, double>::value_type( 1./sqrt(3.), 1.) );
+      break;
+    case 3:
+      fGaus.insert( map<double, double>::value_type(-sqrt(3./5.), 5./9.) );
+      fGaus.insert( map<double, double>::value_type(          0., 8./9.) );
+      fGaus.insert( map<double, double>::value_type( sqrt(3./5.), 5./9.) );
+      break;
+    case 4:
+      fGaus.insert( map<double, double>::value_type(-sqrt(3./7. + 2.*sqrt(6./5.)/7.), (18.-sqrt(30.))/36.) );
+      fGaus.insert( map<double, double>::value_type(-sqrt(3./7. - 2.*sqrt(6./5.)/7.), (18.+sqrt(30.))/36.) );
+      fGaus.insert( map<double, double>::value_type( sqrt(3./7. - 2.*sqrt(6./5.)/7.), (18.+sqrt(30.))/36.) );
+      fGaus.insert( map<double, double>::value_type( sqrt(3./7. + 2.*sqrt(6./5.)/7.), (18.-sqrt(30.))/36.) );
+      break;
+    default:
+      break;
+  }
 }
 
 FDM::IFdmBiotSavart::~IFdmBiotSavart()
@@ -76,4 +104,33 @@ double FDM::IFdmBiotSavart::EvalPotential(double pr, double pz)
   return Aphi;
 }
 
+double FDM::IFdmBiotSavart::EvalPotential2(double pr, double pz)
+{
+  double Aphi = 0.;
 
+  const double r0 = fSolenoid[0];
+  const double r1 = fSolenoid[1];
+  const double z0 = fSolenoid[2];
+  const double z1 = fSolenoid[3];
+
+  double R, Z, PHI, rPQ, gw, A;
+
+  for (map<double, double>::iterator it=fGaus.begin(); it!=fGaus.end(); it++) {
+    for (map<double, double>::iterator jt=fGaus.begin(); jt!=fGaus.end(); jt++) {
+      for (map<double, double>::iterator kt=fGaus.begin(); kt!=fGaus.end(); kt++) {
+        R   = r0 + (it->first + 1) * (r1-r0) / 2;
+        Z   = z0 + (jt->first + 1) * (z1-z0) / 2;
+        PHI = 0. + (kt->first + 1) * 2*M_PI / 2;
+
+        rPQ = sqrt( pow(Z-pz,2) + pow(R,2) + pow(pr,2) - 2*pr*R*cos(PHI) ); 
+        gw  = R * cos(PHI) / rPQ;
+        A   = it->second * jt->second * kt->second * gw;
+        Aphi += A;
+        //std::cout << it->first << " " << jt->first << " " << kt->first << " " << std::endl;
+      }
+    }
+  }
+  Aphi = Aphi * (mu0 * fCurrent / 4 / M_PI) * (r1-r0) * (z1-z0) * M_PI / 2. / 2.;
+
+  return Aphi;
+}

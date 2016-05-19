@@ -33,18 +33,13 @@ void FDM::IFdmDataflow::Fill(const std::string& sol, const std::string& name, FD
 
   TTree* tree = new TTree(name.c_str(), Form("Quench time: %s", name.c_str()));
   
-  int    id  [3];
   IElectricContainer* evt = NULL;
 
-  tree->Branch(  "id",   id,   "id[3]/I");
   tree->Branch("data", "IElectricContainer", &evt, 128000, 0);
 
   for (int i=0; i<mag->GetMesh()[0]+2; i++) {
     for (int j=0; j<mag->GetMesh()[1]+2; j++) {
       for (int k=0; k<mag->GetMesh()[2]+2; k++) {
-        id[0] = i;
-        id[1] = j;
-        id[2] = k;
         evt = mag->GetContainer(i,j,k);
         tree->Fill();
       }

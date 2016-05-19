@@ -48,7 +48,7 @@ void Run()
 {
   // set time step
   double t0 = 0.*sec;
-  double tf = 100.*sec;
+  double tf = 200.*sec;
   double dt = 0.01*msec;
 
   try {
@@ -70,17 +70,29 @@ void Post()
 {
   IMyPostprocess* post = new IMyPostprocess();
   post->SetDirectory("CS0");
-  post->SetFile("plot.root");
+  post->SetFile("cs0plot.root");
   post->PlotTimeTemp();
+  post->PlotField2D();
+  post->PlotTemp2D();
+  post->PlotHeat2D();
+
+  IMyPostprocess* cs1 = new IMyPostprocess();
+  cs1->SetDirectory("CS1");
+  cs1->SetFile("cs1plot.root");
+  cs1->PlotTimeTemp();
+  cs1->PlotField2D();
+  cs1->PlotTemp2D();
+  cs1->PlotHeat2D();
 }
 
 /*! main program */
 int main(int argc, char** argv)
 {
-  Run();
-  //Post();
-
   //TApplication* app = new TApplication("app", &argc, argv);
+
+  Run();
+  Post();
+
 /*
   FDM::IFdmField* fld = new FDM::IFdmField();
   fld->SetMapMesh(9, 270);
@@ -93,8 +105,6 @@ int main(int argc, char** argv)
   //fld->SetCurrentDensity(33.75e+6);
   fld->EvalField();
 */
-/*
-  app->Run();
-*/
+  //app->Run();
   return 0;
 }

@@ -30,7 +30,7 @@ void FDM::IFdmConstruction::Construct()
   // CS0
   // ************************** //
   if (!fCS0)
-    fCS0 = new IFdmThermalSolver(35,1,9);
+    fCS0 = new FDM::IFdmThermalSolver(35,1,9);
 
   fCS0->SetLayer(9);
   fCS0->SetTurn(35);
@@ -43,17 +43,18 @@ void FDM::IFdmConstruction::Construct()
   // CS1
   // ************************** //
   if (!fCS1)
-    fCS1 = new IFdmThermalSolver(270, 1, 9);
+    fCS1 = new FDM::IFdmThermalSolver(270, 1, 9);
 
   fCS1->SetLayer(9);
   fCS1->SetTurn(270);
-  fCS1->SetRRR(200.);
+  fCS1->SetRRR(300.);
   fCS1->SetField(5.4);
   fCS1->SetCurrent(fCurrent);
   fCS1->Initialize();
 
   // set quench spot
-  fCS1->GetContainer(45,1,2)->SetQuench(true);
+  fCS1->GetContainer(135,1,2)->SetQuench(true);
+
 }
 
 /*! construct magnetic field for each magnet */
@@ -117,6 +118,7 @@ void FDM::IFdmConstruction::TimeLoop()
   double I  = fCurrent;
   double dcyfactor = 1.;
   double dI;
+  double bt1, bt2;
 
   std::cout << "Constructing magnet..." << std::endl;
 
@@ -135,7 +137,7 @@ void FDM::IFdmConstruction::TimeLoop()
   std::cout << "Start Time loop..." << std::endl;
 
   // time loop
-  while (time < fTime[1] || I <= 0.) {
+  while (time < fTime[1] || I < 0.) {
 
     time += dt;
 
@@ -151,7 +153,7 @@ void FDM::IFdmConstruction::TimeLoop()
       // calculate current decay
       dI = I - CurrentDecay(magres, qchtime);
       I  = CurrentDecay(magres, qchtime);
-      dcyfactor = dI / fCurrent;
+      dcyfactor = dI / I;
       // calculate field decay
       FieldDecay(fCS0, dcyfactor);
       FieldDecay(fCS1, dcyfactor);
@@ -162,12 +164,18 @@ void FDM::IFdmConstruction::TimeLoop()
     fCS1->Upgrade(I);
 
     // solve thermal conduct equation
-    fCS0->Solve(dt);
-    dt = fCS1->Solve(dt);
+    bt1 = fCS0->Solve(dt);
+    bt2 = fCS1->Solve(dt);
+    if (bt1 > bt2)
+      dt = bt1;
+    else
+      dt = bt2;
+
+    dt /= 3.;
 
     // connect magnets
-    fCS0->GetContainer(0,1,9)->SetTemp( fCS1->GetContainer(270,1,9)->GetTemp() );
-    fCS1->GetContainer(271,1,9)->SetTemp( fCS0->GetContainer(1,1,9)->GetTemp() );
+    fCS0->GetContainer(0,1,9)->SetTemp( fCS1->GetContainer(270,1,1)->GetTemp() );
+    fCS1->GetContainer(271,1,1)->SetTemp( fCS0->GetContainer(1,1,9)->GetTemp() );
 
     if (cnt%4==0)
 /*    std::cout << " Time: " << time << " [sec] " << " step: " << dt / msec << " [msec]"
@@ -181,12 +189,14 @@ void FDM::IFdmConstruction::TimeLoop()
               << std::setw(7) << dt / msec
               << std::setw(9) << I
               << std::setw(9) << std::scientific << magres * I
+              //<< std::setw(9) << magres
               << std::setw(9) << fCS1->GetContainer(45,1,2)->GetSource()
               << std::setw(9) << std::fixed << fCS1->GetContainer(45,1,2)->GetTemp()
+              //<< std::setw(9) << fCS0->GetContainer(35,1,9)->GetTemp()
               << std::setw(9) << fCS0->GetContainer(1,1,9)->GetTemp()
               << std::setw(7) << fCS1->GetContainer(135,1,1)->GetField() << std::endl;
 
-    if (cnt%5==0) {
+    if (cnt%50==0) {
       name = std::string(Form("%.2f sec", time));
 
       data->Fill("CS0", name, fCS0);
